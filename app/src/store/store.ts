@@ -6,6 +6,9 @@ import { gistology } from './gistology';
 import { clinika } from './clinika';
 import { sanitary } from './sanitary';
 import { biochimiya } from './biochimiya';
+import { microBiology } from './microBiology';
+import { microBiologyWord } from './microBiologyWord';
+import { gos } from './gos';
 
 interface Object {
   [key: string]: any;
@@ -50,12 +53,21 @@ interface Link {
 // o = {};
 // s.split(/\d{1,3}\./g).map((x,i) => createObj(x)).filter(x => !!x.question).map((x,i) => o[i+1] = x)
 
-let biochimiya1 = Object.fromEntries(Object.entries(biochimiya).slice(0,100));
-let biochimiya2 = Object.fromEntries(Object.entries(biochimiya).slice(100,200));
-let biochimiya3 = Object.fromEntries(Object.entries(biochimiya).slice(200,300));
-let biochimiya4 = Object.fromEntries(Object.entries(biochimiya).slice(300,400));
-let biochimiya5 = Object.fromEntries(Object.entries(biochimiya).slice(400,500));
-let biochimiya6 = Object.fromEntries(Object.entries(biochimiya).slice(500,603));
+let allQuestions = Object.entries(gos);
+let objects: Object = {};
+for (let i = 0; i < allQuestions.length - 100; i += 100) {
+  let key = `gos${i}`
+  let isActive = i == 0;
+  let endNumber = i + 100;
+  if (allQuestions.length - i < 200) {
+    endNumber = allQuestions.length;
+  }
+  objects[key] = {
+    value: isActive,
+    title: `Гос экзамен ${i+1}-${endNumber}`,
+    data: Object.fromEntries(allQuestions.slice(i, endNumber))
+  }
+}
 
 const defaultNumberQuestions = 100;
 
@@ -65,7 +77,6 @@ class Store {
   dataQuestions: [string, any][] = [];
   showQuestions: [string, any][] = [];
   shuffleQuestions:Array<any> = [];
-  links: Array<Link> = [];
   score = 0;
   isCheck = false;
   isStart = false;
@@ -88,13 +99,11 @@ class Store {
     // gistology: { value: true, title: 'Гистологические исследования', data: gistology },
     // clinika: { value: false, title: 'Общеклинические исследования', data: clinika },
     // sanitary: { value: true, title: 'Санитарное дело', data: sanitary },
-    biochimiya1: { value: true, title: 'Биохимия 1-100', data: biochimiya1 },
-    biochimiya2: { value: false, title: 'Биохимия 101-200', data: biochimiya2 },
-    biochimiya3: { value: false, title: 'Биохимия 201-300', data: biochimiya3 },
-    biochimiya4: { value: false, title: 'Биохимия 301-400', data: biochimiya4 },
-    biochimiya5: { value: false, title: 'Биохимия 401-500', data: biochimiya5 },
-    biochimiya6: { value: false, title: 'Биохимия 501-603', data: biochimiya6 },
-    biochimiya: { value: false, title: 'Биохимия выбор определенных вопросов', data: biochimiya, 
+    // biochimiya: { value: false, title: 'Биохимия выбор определенных вопросов', data: biochimiya, 
+    //   isCanSelect: true },
+
+    ...objects,
+    gos: { value: false, title: 'Гос экзамен выбор определенных вопросов', data: gos, 
       isCanSelect: true },
   };
   questionText = '';
@@ -118,11 +127,11 @@ class Store {
     this.getData = this.getData.bind(this);
     this.changeTest = this.changeTest.bind(this);
     this.search = this.search.bind(this);
-    this.designationAnswer = this.designationAnswer.bind(this);
     this.check = this.check.bind(this);
     this.changeRangeNumberQuestions = this.changeRangeNumberQuestions.bind(this);
     this.changeSelectedQuestions = this.changeSelectedQuestions.bind(this);
-    this.changeTest("biochimiya1", true);
+    this.changeTest(Object.keys(objects)[0], true);
+    this.setRightAnswers = this.setRightAnswers.bind(this);
   }
 
   scrollToAnswer(event: React.MouseEvent<HTMLElement, MouseEvent>) {
@@ -193,57 +202,22 @@ class Store {
     return isRight ? 1 : 0;
   }
 
-  collectAnswers(data: HTMLFormElement, rightAnswer: Array<string>) {
-    let isRight = [];
-    let formData = new FormData(data);
-    for (let pair of formData.entries()) {
-      let selectAnswer = `${pair[1]}`;
-      isRight.push(this.checkEqual(rightAnswer, selectAnswer));
-    }
-    return isRight;
-  }
-
-  designationAnswer(isRight: Array<number>, id: string, rightAnswer: Array<string|number>, index: number) {
-    if (isRight.length >= rightAnswer.length && Math.min(...isRight)) {
-      this.rightAnswers[id] = true; 
-    } else {
-      this.rightAnswers[id] = false; 
-      this.links.push({ id, index });
-    }
+  setRightAnswers(id: string, value: Boolean) {
+    let oldValue = this.rightAnswers[id];
+    if (oldValue == undefined || oldValue == null || oldValue == true) {
+      this.rightAnswers[id] = value;
+    } 
   }
 
   check() {
     this.score = 0;
     this.isShowResults = true;
-    let forms = document.querySelectorAll('form');
-    this.rightAnswers = {};
-    forms.forEach((data, index) => {
-      let id = data.dataset.id || '';
-      let rightAnswer = this.questions[id].rightAnswer;
-      if (!rightAnswer) {
-        let isRight = [...data.querySelectorAll("select")].map(x => {
-          let rightAnswer = x.dataset.rightanswer;
-          let value = x.value;
-          return value === rightAnswer ? 1 : 0
-        })
-        this.designationAnswer(isRight, id, isRight, index+1);
-        let increaseValue = isRight.filter((value) => !!value).length == isRight.length ? 1 : 0;
-        if (increaseValue > 0) {
-          console.log(increaseValue, id)
-        }
-        this.score += +increaseValue.toFixed(2);
-      } else {
-        let isRight = this.collectAnswers(data, rightAnswer);
-        this.designationAnswer(isRight, id, rightAnswer, index+1);
-        let increaseValue = isRight.filter((value) => !!value).length / rightAnswer.length || 0;
-        this.score += +increaseValue.toFixed(2);
-      }
-    });
+    this.score = Object.values(this.rightAnswers).filter(x => !!x).length  
   }
 
   start() {
     this.isStart = true;
-    this.links.length = 0;
+    this.rightAnswers = {}
     this.date = new Date();
     this.time = { hours: '00', seconds: '00', minutes: '00' };
     this.timer();

@@ -16,12 +16,12 @@ const AnswerItem = observer((props) => {
     <div className="question pre">
       <p>{props.index+1}.{ question }</p>
       <ul>
-        { showQuestions.map((answer) => {
+        { showQuestions.map((answer,i) => {
             let className = classNames({
               "answer": true,
               "right-answer": rightAnswer && rightAnswer.includes(answer) || false
             });
-            return <li className={className} key={answer}>{ answer }</li>
+            return <li className={className} key={answer+i}>{ answer }</li>
           })
         }
       </ul>

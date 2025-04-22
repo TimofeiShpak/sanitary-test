@@ -242,6 +242,12 @@ footer {
   border-width: 2px;
 }
 
+.pagging {
+  display: 'flex';
+  gap: '8px';
+  margin-top: '12px';
+}
+
 @media (max-width: 600px) {
   button {
     margin: 3px;

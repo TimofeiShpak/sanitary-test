@@ -31,7 +31,7 @@ const Question = observer((props: QuestionProps) => {
   let data = props.data[1];
   let id = props.data[0];
   let type = data.rightAnswer && data.rightAnswer.length === 1 ? 'radio' :  'checkbox';
-  let { isCheck, rightAnswers } = store;
+  let { isCheck, rightAnswers, setRightAnswers } = store;
   let { isOrder, subQuestions } = data;
   let newAnswers: Array<string> = [];
   if (isOrder && subQuestions) {
@@ -43,15 +43,26 @@ const Question = observer((props: QuestionProps) => {
   let checkIsCorrect = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
     if (event.target instanceof HTMLElement) {
       let textElem = event.target.closest('.text_left');
-
+      let id = null;
+      if (textElem != null) {
+        let questionElem = textElem.closest(".question");
+        if (questionElem != null) {
+          id = questionElem.id
+        }
+      }
       if (textElem) {
         let inputElem = textElem.querySelector('input');
         if (inputElem) {
+          let isCorrect = true;
           let correct = inputElem.dataset.correct;
           if (correct === "true") {
             textElem.classList.add('right');
           } else {
+            isCorrect = false;
             textElem.classList.add('wrong');
+          }
+          if (id != null) {
+            setRightAnswers(id, isCorrect);
           }
         }
       }
@@ -127,7 +138,7 @@ const Question = observer((props: QuestionProps) => {
         !rightAnswers[id] ? (
             <div className="wrong">
               Ошибка! Правильный ответ: 
-              {[...data.rightAnswer].map((answer) => <p key={answer}>{answer}</p>)} 
+              {[...data.rightAnswer].map((answer) => <p key={answer+id}>{answer}</p>)} 
             </div>
           ) : (
             <p className="right">Правильно!</p>
@@ -136,7 +147,7 @@ const Question = observer((props: QuestionProps) => {
         <div className="guess">
           <div className="guess__title">Подсказка</div>
           <div className="guess__answers">
-            {[...data.rightAnswer].map((answer) => <p className="guess__text" key={answer}>{answer}</p>)} 
+            {[...data.rightAnswer].map((answer) => <p className="guess__text" key={answer+id}>{answer}</p>)} 
           </div>
         </div>
       )
@@ -164,13 +175,13 @@ const Question = observer((props: QuestionProps) => {
                 }
                 {
                   subQuestions.questions.map((x,i) => {
-                    return <div className="subQuestions-item" key={x.name}>
+                    return <div className="subQuestions-item" key={x.name+i}>
                       <div>{x.name}</div>
                       <select onChange={(e) => onChangeSelect(e, x.rightAnswer)} id={x.name} name={id} data-rightanswer={x.rightAnswer}>
                         <option value="" hidden={!!isOrder}></option>
                         {
                           newAnswers.map((answer, index) => {
-                            return <option value={answer} key={answer}>{index+1}</option>
+                            return <option value={answer} key={answer+index}>{index+1}</option>
                           })
                         }
                       </select>
@@ -183,7 +194,7 @@ const Question = observer((props: QuestionProps) => {
                   <div>{subQuestions.titleAnswers}</div>
                   {
                     newAnswers.map((answer, index) => {
-                      return <div className="subQuestions-item" key={answer}>{index+1} {answer}</div>
+                      return <div className="subQuestions-item" key={answer+index}>{index+1} {answer}</div>
                     })
                   }
                 </div>
@@ -192,10 +203,10 @@ const Question = observer((props: QuestionProps) => {
           </div>
         ) || newAnswers.length > 0 &&
         ( 
-          newAnswers.map((answer) => {
+          newAnswers.map((answer,i) => {
             let correct = !!(data.rightAnswer && data.rightAnswer.includes(answer))
             return (
-              <div className="text_left" key={answer} onClick={checkIsCorrect}>
+              <div className="text_left" key={answer+i} onClick={checkIsCorrect}>
                 <input type={type} name={id} value={answer} id={answer+id} data-correct={correct} />
                 <label htmlFor={answer+id}>{answer}</label>
               </div>

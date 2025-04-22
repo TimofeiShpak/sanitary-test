@@ -2,7 +2,7 @@ import { observer } from "mobx-react";
 import store from "../store/store";
 
 const Results = observer(() => {
-  let { isCheck, isShowResults, score, numberQuestions, scrollToAnswer, links, changeVisibleResults } = store;
+  let { isCheck, isShowResults, score, numberQuestions, scrollToAnswer, changeVisibleResults } = store;
 
   return (
     <div>
@@ -15,12 +15,6 @@ const Results = observer(() => {
             <div>
               <p>Ваши баллы: {`${score} : ${numberQuestions}`}</p>
               <span>Процент правильных ответов {`${(score/numberQuestions * 100).toFixed(1)}`}%</span>
-              <div className="wrong-results" onClick={scrollToAnswer}>
-                <div>Неправильные ответы: </div>
-                { links.map((link) => {
-                  return <span className="result" key={link.id} data-id={link.id}>{ link.index }</span>
-                })}
-              </div>
             </div>
           }
         </div>
